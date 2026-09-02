@@ -96,6 +96,36 @@ lelab
 
 ### Windows 常见问题
 
+**uv 安装报错 `Failed to update Windows PE resources`（os error -2147024786）**
+
+这个错误与 LeLab 代码无关，是 uv 在 Windows 上的已知问题 —— uv 尝试更新临时 `.exe` trampoline 文件的 PE 资源时被系统拒绝。官方 `huggingface/leLab` 也同样会触发。解决方案：
+
+1. **更新 uv 到最新版**（最常见原因，旧版本有 trampoline bug）：
+   ```powershell
+   uv self update
+   ```
+   若无自更新，用 `pip install -U uv` 或 `winget upgrade astral-sh.uv`。
+
+2. **临时关闭杀毒/Defender 实时防护**（已验证可成功）：
+   Windows Defender 或其他杀毒软件会锁定临时 `.exe` 文件导致写入失败。
+   - Windows 安全中心 → 病毒和威胁防护 → 管理设置
+   - 临时关闭"实时保护"
+   - 重新运行安装，装完再开启
+
+3. **改用 pip 安装**（绕过 uv 的 trampoline 机制）：
+   ```powershell
+   python -m venv lelab-venv
+   .\lelab-venv\Scripts\Activate.ps1
+   pip install git+https://github.com/OneRobotAI/lelab.git
+   lelab
+   ```
+
+4. **清理 uv 缓存与临时目录**：
+   ```powershell
+   uv cache clean
+   echo $env:TEMP   # 应输出可写的 C:\Users\admin\AppData\Local\Temp
+   ```
+
 **摄像头无法使用**
 - LeLab 在 Windows 上使用 DirectShow 后端
 - 确保无其他应用（如 Zoom、Teams）占用摄像头
