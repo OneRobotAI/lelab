@@ -18,16 +18,43 @@ The actual job lifecycle (subprocess management, registry, log streaming)
 lives in app/jobs.py.
 """
 
+import importlib
 import json
+import logging
+import platform
 import re
 from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from lelab.jobs import JobTarget
 
 _SLUG_RE = re.compile(r"[^a-zA-Z0-9._-]+")
+
+
+def _resolve_video_backend(requested: str | None) -> str:
+    """Return the video backend to pass to LeRobot.
+
+    If the caller explicitly chose a backend, honour it.  Otherwise, probe
+    whether ``torchcodec`` can actually load at runtime (it may be installed
+    but broken on Windows when FFmpeg shared DLLs are missing) and fall back
+    to ``pyav`` when it can't.
+    """
+    if requested:
+        return requested
+    if importlib.util.find_spec("torchcodec"):
+        try:
+            importlib.import_module("torchcodec")
+            return "torchcodec"
+        except (ImportError, OSError, RuntimeError) as exc:
+            logger.warning(
+                "torchcodec is installed but cannot be loaded (%s). Falling back to pyav.", exc
+            )
+            return "pyav"
+    return "pyav"
 
 
 class TrainingRequest(BaseModel):
@@ -37,6 +64,7 @@ class TrainingRequest(BaseModel):
     dataset_root: str | None = None
     dataset_episodes: list[int] | None = None
     dataset_image_transforms_enable: bool = False
+    dataset_video_backend: str | None = None  # "torchcodec" or "pyav"; auto-detected when None
 
     # Policy configuration
     policy_type: str = "act"
@@ -133,6 +161,11 @@ def build_training_command(
         cmd.extend(["--dataset.episodes"] + [str(ep) for ep in request.dataset_episodes])
     if request.dataset_image_transforms_enable:
         cmd.extend(["--dataset.image_transforms.enable", "true"])
+
+    # Video backend – auto-detect when not explicitly set (fixes torchcodec/FFmpeg
+    # DLL loading failures on Windows where the package is installed but broken).
+    video_backend = _resolve_video_backend(request.dataset_video_backend)
+    cmd.extend(["--dataset.video_backend", video_backend])
 
     # Policy
     cmd.extend(["--policy.type", request.policy_type])
