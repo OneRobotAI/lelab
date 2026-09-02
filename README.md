@@ -173,6 +173,24 @@ fatal: unable to access 'https://github.com/OneRobotAI/lelab.git/': Failed to co
 - LeLab 已内置自动修复：当 torchcodec 无法加载 FFmpeg DLL 时，自动回退到 PyAV
 - 若仍有问题，可在训练时选择 `pyav` 作为视频后端
 
+**训练完成时报错 `WinError 1314 客户端没有所需的特权`（符号链接创建失败）**
+
+LeRobot 保存 checkpoint 后，会创建一个符号链接 `checkpoints/last -> 训练输出目录`。但 Windows 默认不允许普通用户创建符号链接，导致训练完成后报 `OSError: [WinError 1314]`。解决方案：
+
+1. **方案一：开启 Windows 开发者模式**（推荐，一劳永逸，所有需要符号链接的操作都能正常）：
+   - 图形界面：`设置 → 隐私和安全性 → 开发者选项 → 开发者模式 → 开启`
+   - 或命令行一键开启（需管理员 PowerShell）：
+     ```powershell
+     reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" /t REG_DWORD /f /v "AllowDevelopmentWithoutDevLicense" /d "1"
+     # 重启电脑生效
+     ```
+
+2. **方案二：以管理员身份运行**（已验证可成功）：
+   - 右键 PowerShell → "以管理员身份运行" → 启动 `lelab`
+   - 管理员权限可以创建符号链接
+
+> 说明：训练本身已成功完成并保存了 checkpoint，只是最后的 `last` 符号链接创建失败。开启开发者模式或管理员运行后重训即可正常。
+
 ---
 
 ## macOS 安装
