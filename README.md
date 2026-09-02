@@ -126,6 +126,41 @@ lelab
    echo $env:TEMP   # 应输出可写的 C:\Users\admin\AppData\Local\Temp
    ```
 
+**安装时 `git fetch` 连接 github.com:443 超时（浏览器能开 GitHub 但命令行失败）**
+
+这是**代理不一致**问题：浏览器走了系统代理能访问 GitHub，但命令行 `git.exe` 不会自动读取系统代理。典型报错：
+```
+fatal: unable to access 'https://github.com/OneRobotAI/lelab.git/': Failed to connect to github.com port 443
+```
+
+永久生效的配置方式（用你的实际代理端口替换 `7897`）：
+
+1. **设置系统环境变量**（永久）：
+   ```powershell
+   [Environment]::SetEnvironmentVariable("HTTP_PROXY", "http://127.0.0.1:7897", "User")
+   [Environment]::SetEnvironmentVariable("HTTPS_PROXY", "http://127.0.0.1:7897", "User")
+   ```
+
+2. **给 git 全局配置代理**：
+   ```powershell
+   git config --global http.proxy http://127.0.0.1:7897
+   git config --global https.proxy http://127.0.0.1:7897
+   ```
+
+3. **重开一个全新的 PowerShell 窗口**（当前窗口读不到新环境变量），然后验证：
+   ```powershell
+   echo $env:HTTPS_PROXY          # 应显示代理地址
+   git config --global --get http.proxy
+   git ls-remote https://github.com/OneRobotAI/lelab.git   # 能列出分支即成功
+   ```
+
+4. **重新安装**：
+   ```powershell
+   uv tool install git+https://github.com/OneRobotAI/lelab.git
+   ```
+
+> 提示：代理端口取决于你的代理软件（Clash/Clash Verge 常见 `7890`，其他工具可能是不同端口），把命令里的 `7897` 换成你的实际端口。
+
 **摄像头无法使用**
 - LeLab 在 Windows 上使用 DirectShow 后端
 - 确保无其他应用（如 Zoom、Teams）占用摄像头
