@@ -59,18 +59,59 @@
 - **Git**
 - **SO-101 机械臂的 USB 串口驱动**（Windows 需安装 CH340/CP2102 驱动）
 
+### 安装 uv
+
+LeLab 推荐用 **uv**（极速的 Python 包管理器）安装和运行。按平台选择：
+
+**Windows（PowerShell）**
+```powershell
+# 方式一：winget
+winget install --id=astral-sh.uv  -e
+
+# 方式二：官方安装脚本
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+**macOS**
+```bash
+# 方式一：Homebrew
+brew install uv
+
+# 方式二：官方安装脚本
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+**Ubuntu / Linux**
+```bash
+# 方式一：官方安装脚本
+curl -LsSf https://astral.sh/uv/install.sh | sh
+# 脚本会把 uv 安装到 ~/.local/bin，重启终端或执行 source ~/.local/bin/env
+
+# 方式二：apt（Ubuntu 24.10+）
+sudo apt install uv
+
+# 方式三：cargo
+cargo install --git https://github.com/astral-sh/uv uv
+```
+
+安装后验证：
+```bash
+uv --version
+```
+
+> 如果系统已有旧版 uv，升级用 `uv self update`（三平台通用）。
+
 ### 通用方式（uv 推荐，三平台通用）
 
 ```bash
-# 安装 uv（如果还没有）
-pip install uv
-
 # 安装 LeLab
 uv tool install git+https://github.com/OneRobotAI/lelab.git
 
 # 启动（自动打开浏览器）
 lelab
 ```
+
+> 提示：uv 会在 `~/.local/share/uv/tools/`（Windows 为 `%APPDATA%\uv\tools\`）下创建独立环境安装 LeLab，`lelab` 命令会自动加入 PATH。
 
 ---
 
